@@ -1,74 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // 导入 axios 用于网络请求
-import BlindBoxCard from '../components/BlindBoxCard'; // 导入刚刚创建的卡片组件
+import axios from 'axios';
+import BlindBoxCard from '../components/BlindBoxCard';
 
 function BlindBoxList() {
-  // 使用 useState 创建一个状态变量 `boxes`，用来存储从后端获取的盲盒数组。
-  // `boxes` 是当前的数据。
-  // `setBoxes` 是一个函数，用来更新 `boxes` 的值。
-  //  初始值设为一个空数组 `[]`。
   const [boxes, setBoxes] = useState([]);
-
-  // 使用 useState 创建一个状态变量 `loading`，用来跟踪数据是否正在加载中。
   const [loading, setLoading] = useState(true);
-
-  // 使用 useState 创建一个状态变量 `error`，用来存储加载数据时可能发生的错误信息。
   const [error, setError] = useState(null);
 
-  // 使用 useEffect 来处理“副作用”，比如网络请求。
-  // 这个 Hook 里的代码会在组件第一次渲染到屏幕上之后自动执行一次。
-  // 第二个参数 `[]` 是一个依赖项数组，空数组表示这个 effect 只执行一次。
+  // 1. 新增一个 state，专门用来存储用户在搜索框里输入的文字。
+  const [searchTerm, setSearchTerm] = useState('');
+
   useEffect(() => {
-    // 定义一个异步函数来获取数据
     const fetchBoxes = async () => {
       try {
-        // 使用 axios 发起 GET 请求到我们的后端 API。
         const response = await axios.get('http://127.0.0.1:7001/api/blind-box');
-        
-        //请求成功后，使用 setBoxes 函数更新状态，将获取到的数据存起来。
         setBoxes(response.data);
       } catch (err) {
-        //如果请求过程中发生错误，就更新 error 状态。
         setError('加载盲盒数据失败，请稍后再试。');
         console.error(err);
       } finally {
-        //最后将 loading 状态设置为 false。
         setLoading(false);
       }
     };
 
-    fetchBoxes(); // 调用这个函数来开始获取数据
-  }, []); // 空依赖数组，确保只在组件挂载时执行一次
+    fetchBoxes();
+  }, []);
 
-  //根据不同的状态，显示不同的 UI
+  // 2. 创建一个“派生状态” (Derived State)。
+  //    - 它不是一个新的 state，而是根据现有的 `boxes` 和 `searchTerm` state 计算出来的新变量。
+  //    - .filter() 方法会遍历原始的 boxes 数组。
+  //    - box.name.toLowerCase().includes(searchTerm.toLowerCase())
+  //      - 这行代码的意思是：把盲盒名称和搜索词都转成小写，然后检查名称中是否“包含”搜索词。
+  //      - 这样可以实现不区分大小写的模糊搜索。
+  const filteredBoxes = boxes.filter(box =>
+    box.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // 如果正在加载中，显示一个加载提示
   if (loading) {
     return <div className="text-center p-10">正在努力加载中...</div>;
   }
 
-  // 如果发生了错误，显示错误信息
   if (error) {
     return <div className="text-center p-10 text-red-500">{error}</div>;
   }
 
-  //数据加载成功，渲染主界面
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
+        <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">
           盲盒商店
         </h1>
 
-        {/*使用网格布局来展示盲盒卡片 */}
+        {/* 3. 添加搜索框的 UI */}
+        <div className="mb-8 max-w-md mx-auto">
+          <input
+            type="text"
+            placeholder="搜索盲盒名称..."
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            // 4. 将输入框的值与 searchTerm state 绑定
+            value={searchTerm}
+            // 5. 当用户在输入框里打字时，触发 onChange 事件，调用 setSearchTerm 更新状态
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* 6. 将 .map() 的遍历对象从 `boxes` 改为 `filteredBoxes` */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {/*用 .map() 方法遍历 boxes 数组，为每一项数据渲染一个 BlindBoxCard 组件 */}
-          {boxes.map((box) => (
-            //key={box.id}  React 用它来高效地更新列表。
-            //box={box}通过 props 将单个盲盒的数据传递给卡片组件。
+          {filteredBoxes.map((box) => (
             <BlindBoxCard key={box.id} box={box} />
           ))}
         </div>
+
+        {/* 7. 如果筛选后的列表是空的，显示一个提示信息 */}
+        {filteredBoxes.length === 0 && (
+          <div className="text-center col-span-full text-gray-500 mt-10">
+            <p>没有找到符合条件的盲盒哦~</p>
+          </div>
+        )}
       </div>
     </div>
   );
