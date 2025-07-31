@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 function Navbar() {
-  // 1. 从全局 AuthContext 中获取用户状态和方法
+  // 从全局 AuthContext 中获取用户状态和方法
   const { isAuthenticated, user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -21,7 +21,7 @@ function Navbar() {
         </Link>
 
         <div>
-          {/* 2. 根据 isAuthenticated 的值来决定显示什么内容 */}
+          {/* 根据 isAuthenticated 的值来决定显示什么内容 */}
           {isAuthenticated ? (
             // 如果用户已登录
             <div className="flex items-center space-x-4">
@@ -37,11 +37,14 @@ function Navbar() {
               </button>
             </div>
           ) : (
-            // 如果用户未登录
+            // 【问题修复区域】
+            // 如果用户未登录，应该同时显示“登录”和“注册”
             <div className="space-x-4">
+              {/* 这是“登录”链接，之前可能缺失了 */}
               <Link to="/login" className="text-gray-700 hover:text-indigo-600">
                 登录
               </Link>
+              {/* 这是“注册”按钮 */}
               <Link
                 to="/register"
                 className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
